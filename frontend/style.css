@@ -1,0 +1,374 @@
+/* ==========================================================================
+   DepthWizard Tactical UI - Dark Theme & Glassmorphism System
+   ========================================================================== */
+
+:root {
+    --bg-dark: #0B0F19;
+    --panel-bg: rgba(15, 23, 42, 0.82);
+    --panel-border: rgba(0, 240, 255, 0.18);
+    --cyan-accent: #00F0FF;
+    --amber-accent: #FFB800;
+    --emerald-accent: #10B981;
+    --text-primary: #F8FAFC;
+    --text-muted: #94A3B8;
+    --font-heading: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* Header Navbar */
+.hud-header {
+    height: 60px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--panel-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 100;
+    position: relative;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.isro-logo-badge {
+    background: linear-gradient(135deg, #FF9933, #FFFFFF, #128807);
+    color: #000;
+    font-weight: 800;
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+}
+
+.brand-text h1 {
+    font-family: var(--font-heading);
+    font-size: 18px;
+    letter-spacing: 1px;
+    color: var(--text-primary);
+}
+
+.brand-text h1 .tag {
+    font-size: 10px;
+    background: rgba(0, 240, 255, 0.15);
+    color: var(--cyan-accent);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--cyan-accent);
+}
+
+.brand-text .sub {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Telemetry Header Items */
+.telemetry-bar {
+    display: flex;
+    gap: 24px;
+}
+
+.telemetry-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.telemetry-item .label {
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+}
+
+.telemetry-item .value {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-online {
+    color: var(--emerald-accent);
+}
+
+.highlight {
+    color: var(--cyan-accent);
+}
+
+/* Header Buttons */
+.btn {
+    background: rgba(0, 240, 255, 0.1);
+    color: var(--cyan-accent);
+    border: 1px solid var(--cyan-accent);
+    padding: 8px 16px;
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    background: var(--cyan-accent);
+    color: #000;
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+}
+
+/* Main Viewport Grid */
+.viewport-container {
+    position: relative;
+    width: 100vw;
+    height: calc(100vh - 60px);
+}
+
+#webgl-canvas-container {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+/* Glassmorphic Panels */
+.hud-panel {
+    background: var(--panel-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 16px;
+    z-index: 10;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.panel-header {
+    margin-bottom: 12px;
+}
+
+.panel-header h3 {
+    font-family: var(--font-heading);
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+}
+
+/* Sidebar Controls */
+.sidebar-controls {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 240px;
+}
+
+.layer-buttons, .control-mode-toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.layer-btn, .mode-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+}
+
+.layer-btn.active, .mode-btn.active {
+    background: rgba(0, 240, 255, 0.15);
+    border-color: var(--cyan-accent);
+    color: var(--cyan-accent);
+}
+
+.hint-box {
+    margin-top: 12px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+/* Inspector Card */
+.inspector-card {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 260px;
+}
+
+.inspector-data {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.data-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.data-row .label {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.data-row .value-highlight {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--amber-accent);
+}
+
+.data-row .value-mono {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-primary);
+}
+
+.inspector-footer {
+    margin-top: 10px;
+    font-size: 9px;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Logger Panel (MANDATORY REQUIREMENT) */
+.logger-panel {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 480px;
+    max-height: 280px;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logger-panel.minimized {
+    max-height: 48px;
+    overflow: hidden;
+}
+
+.logger-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logger-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.logger-title .badge {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    background: var(--cyan-accent);
+    color: #000;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+.logger-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.btn-small {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+    font-size: 9px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-small:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.logger-stream {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    height: 180px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-right: 4px;
+}
+
+.log-entry {
+    background: rgba(0, 0, 0, 0.4);
+    padding: 4px 8px;
+    border-left: 2px solid var(--cyan-accent);
+    border-radius: 2px;
+    word-break: break-all;
+    line-height: 1.4;
+}
+
+.log-entry .timestamp {
+    color: var(--text-muted);
+    font-size: 10px;
+    margin-right: 6px;
+}
+
+.log-entry .event-type {
+    color: var(--amber-accent);
+    font-weight: 700;
+    margin-right: 6px;
+}
+
+.log-entry .component {
+    color: var(--cyan-accent);
+    margin-right: 6px;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 4px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--cyan-accent);
+    border-radius: 2px;
+}

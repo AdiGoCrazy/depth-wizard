@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DepthWizard | ISRO Tactical Reconnaissance & 3D Flythrough</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- Style -->
+    <link rel="stylesheet" href="/style.css">
+    <!-- Three.js & OrbitControls via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+    <!-- Header Navigation Bar -->
+    <header class="hud-header">
+        <div class="brand">
+            <div class="isro-logo-badge">ISRO</div>
+            <div class="brand-text">
+                <h1>DEPTHWIZARD <span class="tag">PROTOTYPE</span></h1>
+                <p class="sub">Space Applications Centre • Single-View Elevation Suite</p>
+            </div>
+        </div>
+        
+        <div class="telemetry-bar">
+            <div class="telemetry-item">
+                <span class="label">SYSTEM STATUS</span>
+                <span class="value status-online" id="status-indicator">● ONLINE (CUDA)</span>
+            </div>
+            <div class="telemetry-item">
+                <span class="label">MODE</span>
+                <span class="value" id="mode-indicator">RELATIVE / METRIC AUTO</span>
+            </div>
+            <div class="telemetry-item">
+                <span class="label">FPS</span>
+                <span class="value highlight" id="fps-counter">60</span>
+            </div>
+        </div>
+
+        <div class="actions">
+            <label for="file-upload" class="btn btn-primary" id="btn-upload-label">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                UPLOAD SATELLITE IMAGE
+            </label>
+            <input type="file" id="file-upload" accept=".tif,.geotiff,.png,.jpg,.jpeg" style="display: none;">
+        </div>
+    </header>
+
+    <!-- Main Viewport Area -->
+    <main class="viewport-container">
+        <!-- 3D WebGL Canvas Target -->
+        <div id="webgl-canvas-container"></div>
+
+        <!-- Floating Tactical Overlay Controls (Left Sidebar) -->
+        <aside class="hud-panel sidebar-controls">
+            <div class="panel-header">
+                <h3>VIEWPORT LAYERS</h3>
+            </div>
+            <div class="layer-buttons">
+                <button class="layer-btn active" data-layer="rgb" id="btn-layer-rgb">OPTICAL RGB</button>
+                <button class="layer-btn" data-layer="dsm" id="btn-layer-dsm">ELEVATION DSM</button>
+                <button class="layer-btn" data-layer="slope" id="btn-layer-slope">SLOPE MAP</button>
+            </div>
+
+            <div class="panel-header" style="margin-top: 20px;">
+                <h3>CAMERA NAVIGATION</h3>
+            </div>
+            <div class="control-mode-toggle">
+                <button class="mode-btn active" id="btn-mode-orbit">ORBIT CAM</button>
+                <button class="mode-btn" id="btn-mode-fly">DRONE FLYTHROUGH (WASD)</button>
+            </div>
+            
+            <div class="hint-box" id="fly-instructions" style="display: none;">
+                <p><strong>WASD / Arrow Keys:</strong> Fly Camera</p>
+                <p><strong>Space / Shift:</strong> Elevate / Lower</p>
+                <p><strong>Click Canvas:</strong> Enable Mouse Look</p>
+            </div>
+        </aside>
+
+        <!-- Floating Point Inspector HUD Card (Top Right) -->
+        <div class="hud-panel inspector-card" id="inspector-card">
+            <div class="panel-header">
+                <h3>POINT INSPECTOR</h3>
+                <span class="pulse-icon">●</span>
+            </div>
+            <div class="inspector-data">
+                <div class="data-row">
+                    <span class="label">ELEVATION (Z):</span>
+                    <span class="value-highlight" id="inspect-z">-- m</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">SLOPE ANGLE:</span>
+                    <span class="value" id="inspect-slope">--°</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">COORDINATES:</span>
+                    <span class="value-mono" id="inspect-coords">X: -- | Y: --</span>
+                </div>
+            </div>
+            <div class="inspector-footer">Hover/Click on 3D terrain to query metrics</div>
+        </div>
+
+        <!-- Real-time Interaction Logger HUD Panel (Bottom Right - MANDATORY REQUIREMENT) -->
+        <section class="hud-panel logger-panel" id="logger-panel">
+            <div class="panel-header logger-header">
+                <div class="logger-title">
+                    <span class="icon">📜</span>
+                    <h3>TACTICAL INTERACTION LOG LEDGER</h3>
+                    <span class="badge" id="log-count-badge">0 LOGS</span>
+                </div>
+                <div class="logger-actions">
+                    <button class="btn-small" id="btn-export-logs">EXPORT LOGS (.JSON)</button>
+                    <button class="btn-small btn-toggle" id="btn-toggle-logger">MINIMIZE</button>
+                </div>
+            </div>
+            <div class="logger-stream" id="logger-stream-container">
+                <!-- Log entries will be dynamically injected here in monospace format -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Scripts -->
+    <script type="module" src="/src/app.js"></script>
+</body>
+</html>
