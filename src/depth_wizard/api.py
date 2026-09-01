@@ -2,12 +2,14 @@ import os
 import uuid
 import logging
 from pathlib import Path
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from depth_wizard.ingestion import ImageIngestor, IngestionError
+from depth_wizard.preprocessing import ImagePreprocessor
 from depth_wizard.model import DepthModel, ResourceExhaustedError
+from depth_wizard.segmentation import SegmentationEngine, flatten_depth_by_masks
 from depth_wizard.calibration import SRTMCalibrator, CalibrationFitError, CalibrationNetworkError
 from depth_wizard.export import Exporter
 
@@ -24,14 +26,21 @@ ASSET_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/assets", StaticFiles(directory=str(ASSET_STORAGE_DIR)), name="assets")
 
 # Initialize long-lived components
+preprocessor = ImagePreprocessor()
 mde_engine = DepthModel(checkpoint_size="Small")
+seg_engine = SegmentationEngine(device="cpu")
 exporter = Exporter(export_dir=ASSET_STORAGE_DIR)
 
 MAX_UPLOAD_SIZE = 20 * 1024 * 1024  # 20MB
 
 @app.post("/api/process")
-async def process_image(file: UploadFile = File(...)):
-    logger.info(f"[API Gateway] Received upload request: {file.filename}")
+async def process_image(file: UploadFile = File(...), environment: str = Form("urban")):
+    logger.info(f"[API Gateway] Received upload request: {file.filename} (Environment: {environment})")
+    
+    # Validate environment payload
+    if environment not in ["urban", "terrain"]:
+        logger.warning(f"[API Gateway] Invalid environment '{environment}', falling back to 'urban'")
+        environment = "urban"
     
     # 1. Size Validation (mocked check, FastAPI natively uses Starlette limits)
     # A robust check would read chunks or use Content-Length headers.
@@ -52,8 +61,29 @@ async def process_image(file: UploadFile = File(...)):
         # Phase 1: Ingestion
         rgb_array, metadata = ImageIngestor.load_image_and_metadata(temp_file)
         
-        # Phase 2: Inference
+        # Phase 1.5: Preprocessing (CLAHE + Shadow Enhancement)
+        if environment == "urban":
+            logger.info("[API Gateway] Urban environment selected. Running preprocessing.")
+            rgb_array = preprocessor.process(rgb_array)
+        else:
+            logger.info("[API Gateway] Terrain environment selected. Bypassing preprocessing.")
+        
+        # Phase 2: Depth Inference
+        mde_engine.load_to_gpu()
         relative_depth = mde_engine.predict(rgb_array)
+        mde_engine.unload_to_cpu()
+        
+        # Phase 2.5: Instance Segmentation & Edge Flattening
+        if environment == "urban":
+            logger.info("[API Gateway] Urban environment selected. Running segmentation.")
+            seg_engine.load_to_gpu()
+            masks = seg_engine.generate_masks(rgb_array)
+            seg_engine.unload_to_cpu()
+            
+            if masks:
+                relative_depth = flatten_depth_by_masks(relative_depth, masks)
+        else:
+            logger.info("[API Gateway] Terrain environment selected. Bypassing segmentation.")
         
         # Phase 3: Calibration & Export
         is_metric = False

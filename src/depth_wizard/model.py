@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from transformers import pipeline
 from pathlib import Path
 from PIL import Image
+import gc
 
 logger = logging.getLogger("depth_wizard.model")
 
@@ -15,8 +16,12 @@ class ResourceExhaustedError(Exception):
 class DepthModel:
     def __init__(self, checkpoint_size="Small"):
         # Explicit memory tracking and device assignment
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        logger.info(f"[MDE Engine] Initializing Depth Anything V2 {checkpoint_size} on {self.device}")
+        # We strictly initialize on CPU so the model does not hold VRAM hostage while idle.
+        # It will be swapped to GPU on demand by the orchestrator.
+        self.device = torch.device("cpu")
+        logger.info(f"[MDE Engine] Initializing Depth Anything V2 {checkpoint_size} on {self.device} (VRAM Swapped out)")
+        
+        self.is_on_gpu = False
         
         # Prefer local Large model (1.35GB) if present, then local Small, then fallback to HF Hub
         large_model_path = Path(__file__).parents[2] / "models" / "depth_anything_v2_large"
@@ -35,31 +40,38 @@ class DepthModel:
         if torch.cuda.is_available():
             logger.info(f"[MDE Engine] VRAM available: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
 
-    def mitigate_shadows(self, image: np.ndarray) -> np.ndarray:
-        """Band-Aid 1: Lighten dark shadows to prevent trench artifacts."""
-        hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-        v_channel = hsv[:, :, 2]
-        
-        # Isolate dark regions (shadows)
-        shadow_mask = v_channel < 50
-        
-        if np.any(shadow_mask):
-            logger.debug("[MDE Engine] Applying shadow mitigation.")
-            # Artificially lighten the shadowed areas slightly to match surrounding albedo
-            v_channel[shadow_mask] = np.clip(v_channel[shadow_mask] + 40, 0, 255)
-            hsv[:, :, 2] = v_channel
-            return cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
-        return image
+    def load_to_gpu(self):
+        """Moves the model to GPU if not already there."""
+        if torch.cuda.is_available() and not self.is_on_gpu:
+            logger.info("[MDE Engine] Moving Depth Anything V2 to GPU (CUDA)")
+            self.pipe.model.to('cuda')
+            self.device = torch.device('cuda')
+            self.pipe.device = self.device
+            self.is_on_gpu = True
+
+    def unload_to_cpu(self):
+        """Moves the model to CPU and frees VRAM."""
+        if self.is_on_gpu:
+            logger.info("[MDE Engine] Moving Depth Anything V2 to CPU and clearing CUDA cache")
+            self.pipe.model.to('cpu')
+            self.device = torch.device('cpu')
+            self.pipe.device = self.device
+            self.is_on_gpu = False
+            
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+
+
 
     def predict(self, image: np.ndarray) -> np.ndarray:
         """Runs inference inside no_grad to strictly cap memory."""
         logger.info("[MDE Engine] Starting depth prediction...")
-        processed_image = self.mitigate_shadows(image)
         
         try:
             with torch.no_grad():
                 # Run actual Depth Anything V2 inference via HuggingFace
-                pil_img = Image.fromarray(processed_image)
+                pil_img = Image.fromarray(image)
                 result = self.pipe(pil_img)
                 
                 # The output contains a 'depth' key which is a PIL Image scaled 0-255
@@ -71,10 +83,7 @@ class DepthModel:
                 depth_np = (depth_np - depth_min) / (depth_max - depth_min + 1e-8)
                 
             logger.info("[MDE Engine] Inference complete.")
-            
-            # Band-Aid 2: Guided Filter Edge Alignment
-            refined_depth = self.guided_filter_refine(depth_np, processed_image)
-            return refined_depth
+            return depth_np
             
         except RuntimeError as e:
             if "out of memory" in str(e):
@@ -82,15 +91,3 @@ class DepthModel:
                 torch.cuda.empty_cache()
                 raise ResourceExhaustedError("Failed due to VRAM limitations. Image too large.")
             raise e
-
-    def guided_filter_refine(self, raw_depth: np.ndarray, guide_rgb: np.ndarray) -> np.ndarray:
-        """Forces depth map edges to align with sharp RGB physical edges."""
-        logger.debug("[MDE Engine] Applying guided filter.")
-        # Ensure depth is float32
-        raw_depth_f32 = raw_depth.astype(np.float32)
-        # OpenCV ximgproc guided filter (mocked here with bilateralFilter due to dependency limits)
-        # A true Guided Filter requires cv2.ximgproc, so we use Bilateral as a lightweight structural fallback
-        # Multiply by 255 for cv2, then normalize back
-        depth_8u = (raw_depth_f32 * 255).astype(np.uint8)
-        filtered = cv2.bilateralFilter(depth_8u, d=9, sigmaColor=75, sigmaSpace=75)
-        return filtered.astype(np.float32) / 255.0

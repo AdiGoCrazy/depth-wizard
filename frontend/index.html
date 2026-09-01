@@ -41,7 +41,17 @@
             </div>
         </div>
 
-        <div class="actions">
+        <div class="actions" style="display: flex; align-items: center;">
+            <div class="environment-toggle" style="margin-right: 20px; display: flex; flex-direction: column; gap: 4px; font-family: 'Space Grotesk', sans-serif; font-size: 0.75rem;">
+                <label style="color: var(--text-muted); cursor: pointer; display: flex; align-items: center;">
+                    <input type="radio" name="environment" value="urban" checked style="margin-right: 6px; accent-color: var(--primary);"> 
+                    Urban (Buildings)
+                </label>
+                <label style="color: var(--text-muted); cursor: pointer; display: flex; align-items: center;">
+                    <input type="radio" name="environment" value="terrain" style="margin-right: 6px; accent-color: var(--primary);"> 
+                    Rugged Terrain
+                </label>
+            </div>
             <label for="file-upload" class="btn btn-primary" id="btn-upload-label">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 UPLOAD SATELLITE IMAGE

@@ -82,6 +82,18 @@ class App {
 
         const formData = new FormData();
         formData.append("file", file);
+        
+        // Extract Environment toggle state
+        const envRadios = document.getElementsByName('environment');
+        let selectedEnv = 'urban';
+        for (const radio of envRadios) {
+            if (radio.checked) {
+                selectedEnv = radio.value;
+                break;
+            }
+        }
+        formData.append("environment", selectedEnv);
+        logger.log('ENVIRONMENT_SELECTED', 'FileHandler', { environment: selectedEnv });
 
         const statusIndicator = document.getElementById('status-indicator');
         if (statusIndicator) statusIndicator.textContent = "● PROCESSING INFERENCE...";

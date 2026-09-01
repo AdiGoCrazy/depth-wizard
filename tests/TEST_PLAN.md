@@ -21,3 +21,15 @@ Comprehensive test cases mapped directly to the edge cases identified in Phase 1
 ## 4. API Gateway End-to-End Tests (`test_api.py`)
 * **Test:** Valid end-to-end relative flow (PNG upload). **Expected:** HTTP 200, returns JSON with `is_metric=False` and valid asset URLs.
 * **Test:** Invalid file size. **Expected:** HTTP 413 Payload Too Large.
+* **Test:** Environment `urban`. **Expected:** Triggers full pipeline (Preprocessor + FastSAM).
+* **Test:** Environment `terrain`. **Expected:** Bypasses Preprocessor and FastSAM completely.
+* **Test:** Invalid Environment Payload. **Expected:** HTTP 422 or graceful fallback to `urban` (HTTP 200).
+
+## 5. Segmentation Engine Tests (`test_segmentation.py`)
+* **Test:** VRAM Swap Protocol. **Expected:** Loading to GPU spikes VRAM, unloading completely clears the allocated VRAM back to the original baseline without memory leaks.
+* **Test:** Generate Masks Valid Output. **Expected:** Engine successfully executes the SAM generator and returns a list of binary masks that match the input dimensions.
+
+## 6. Preprocessing Engine Tests (`test_preprocessing.py`)
+* **Test:** CLAHE Validation. **Expected:** Image is modified in L-channel without altering dimensions or dtype.
+* **Test:** Shadow Enhancement. **Expected:** The mean pixel value of pre-existing dark regions strictly decreases.
+* **Test:** Invalid Dtype Handling. **Expected:** Throws `ValueError` or `TypeError` if fed float arrays instead of `uint8`.
