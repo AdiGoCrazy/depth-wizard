@@ -18,7 +18,10 @@ class App {
 
         // Initialize UI Elements
         this.dsmUrl = null; // Store active DSM for download
+        this.jobId = null;
         this.downloadBtn = document.getElementById('btn-download-dsm');
+        this.validateBtn = document.getElementById('btn-validate-dsm');
+        this.fileValidate = document.getElementById('file-validate');
 
         // Wire Up Event Listeners
         this.bindEvents();
@@ -72,6 +75,12 @@ class App {
         if (this.downloadBtn) {
             this.downloadBtn.addEventListener('click', () => this.handleDownload());
         }
+
+        // 5. Validation Event
+        if (this.validateBtn && this.fileValidate) {
+            this.validateBtn.addEventListener('click', () => this.fileValidate.click());
+            this.fileValidate.addEventListener('change', (e) => this.handleValidationUpload(e));
+        }
     }
 
     async handleFileUpload(event) {
@@ -91,10 +100,17 @@ class App {
             return;
         }
 
-        // Hide download button during new upload
+        // Hide extra buttons during new upload
         if (this.downloadBtn) {
             this.downloadBtn.style.display = 'none';
             this.dsmUrl = null;
+        }
+        if (this.validateBtn) {
+            this.validateBtn.style.display = 'none';
+            this.jobId = null;
+            document.getElementById('row-rmse').style.display = 'none';
+            document.getElementById('row-mae').style.display = 'none';
+            document.getElementById('btn-layer-heatmap').style.display = 'none';
         }
 
         const formData = new FormData();
@@ -147,10 +163,14 @@ class App {
             // Update 3D Terrain using the JPEG texture returned by the API
             this.viewer.updateTerrain(meshData, data.texture_url);
 
-            // Expose GeoTIFF Download
+            // Expose GeoTIFF Download & Validation
             if (this.downloadBtn) {
                 this.dsmUrl = data.dsm_url;
                 this.downloadBtn.style.display = 'flex';
+            }
+            if (this.validateBtn) {
+                this.jobId = data.job_id;
+                this.validateBtn.style.display = 'flex';
             }
 
         } catch (error) {
@@ -199,6 +219,56 @@ class App {
         } finally {
             this.downloadBtn.innerHTML = originalText;
             this.downloadBtn.disabled = false;
+        }
+    }
+
+    async handleValidationUpload(event) {
+        const file = event.target.files[0];
+        if (!file || !this.jobId) return;
+
+        logger.log('VALIDATION_REQUESTED', 'FileHandler', { gt_filename: file.name });
+        
+        const originalText = this.validateBtn.innerHTML;
+        this.validateBtn.innerHTML = 'VALIDATING...';
+        this.validateBtn.disabled = true;
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("job_id", this.jobId);
+
+        try {
+            const response = await fetch('/api/validate', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errJson = await response.json();
+                throw new Error(errJson.detail || "Validation failed.");
+            }
+
+            const data = await response.json();
+            logger.log('VALIDATION_SUCCESS', 'ValidationEngine', { rmse: data.rmse, mae: data.mae });
+
+            // Update UI HUD
+            document.getElementById('row-rmse').style.display = 'flex';
+            document.getElementById('row-mae').style.display = 'flex';
+            document.getElementById('inspect-rmse').textContent = `${data.rmse} m`;
+            document.getElementById('inspect-mae').textContent = `${data.mae} m`;
+
+            // Expose Heatmap Layer
+            document.getElementById('btn-layer-heatmap').style.display = 'block';
+            this.viewer.setHeatmapTexture(data.heatmap_url);
+
+        } catch (error) {
+            logger.error ? logger.error(error) : console.error(error);
+            logger.log('VALIDATION_FAILED', 'ValidationEngine', { error: error.message });
+            alert(`Validation Error: ${error.message}`);
+        } finally {
+            this.validateBtn.innerHTML = originalText;
+            this.validateBtn.disabled = false;
+            // Clear input so same file can be uploaded again if needed
+            event.target.value = '';
         }
     }
 }

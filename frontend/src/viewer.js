@@ -213,7 +213,30 @@ export class TerrainViewer {
             this.terrainMesh.material.map = null;
             this.terrainMesh.material.color.setHex(0xffffff);
             this.terrainMesh.material.needsUpdate = true;
+        } else if (mode === 'heatmap') {
+            // RMSE Error Heatmap Texture
+            this.terrainMesh.material.wireframe = false;
+            this.terrainMesh.material.vertexColors = false;
+            if (this.terrainMesh.userData.heatmapTexture) {
+                this.terrainMesh.material.map = this.terrainMesh.userData.heatmapTexture;
+            }
+            this.terrainMesh.material.color.setHex(0xffffff);
+            this.terrainMesh.material.needsUpdate = true;
         }
+    }
+
+    setHeatmapTexture(textureUrl) {
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.load(textureUrl, (texture) => {
+            if (this.terrainMesh) {
+                this.terrainMesh.userData.heatmapTexture = texture;
+                logger.log('HEATMAP_TEXTURE_LOADED', '3DViewer', { status: 'Success' });
+                
+                // Automatically activate the heatmap layer button visually
+                const heatmapBtn = document.getElementById('btn-layer-heatmap');
+                if (heatmapBtn) heatmapBtn.click();
+            }
+        });
     }
 
     onWindowResize() {

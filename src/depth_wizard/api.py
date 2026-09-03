@@ -107,12 +107,21 @@ async def process_image(file: UploadFile = File(...), environment: str = Form("u
         mesh_filename = f"{job_id}_mesh.json"
         texture_filename = f"{job_id}_texture.jpg"
         
-        exporter.export_geotiff(final_dsm, metadata or {}, dsm_filename)
+        # If the DSM is relative (0.0 to 1.0 float), scale it to 8-bit (0-255)
+        # so generic image viewers don't render it completely white/black.
+        import numpy as np
+        if not is_metric:
+            export_dsm = (final_dsm * 255.0).astype(np.uint8)
+        else:
+            export_dsm = final_dsm
+            
+        exporter.export_geotiff(export_dsm, metadata or {}, dsm_filename)
         exporter.export_mesh_data(final_dsm, mesh_filename)
         exporter.export_texture(rgb_array, texture_filename)
         
         return JSONResponse(content={
             "status": "success",
+            "job_id": job_id,
             "is_metric": is_metric,
             "dsm_url": f"/assets/{dsm_filename}",
             "mesh_url": f"/assets/{mesh_filename}",
@@ -137,6 +146,45 @@ async def process_image(file: UploadFile = File(...), environment: str = Form("u
             temp_file.unlink()
         if temp_dir.exists():
             temp_dir.rmdir()
+
+from depth_wizard.validation import ValidationEngine
+
+@app.post("/api/validate")
+async def validate_dsm(file: UploadFile = File(...), job_id: str = Form(...)):
+    logger.info(f"[API Gateway] Received validation request for Job ID: {job_id}")
+    
+    predicted_dsm_path = ASSET_STORAGE_DIR / f"{job_id}_dsm.tif"
+    if not predicted_dsm_path.exists():
+        raise HTTPException(status_code=404, detail="Predicted DSM not found for this Job ID.")
+        
+    # Save the GT file temporarily
+    gt_temp_path = ASSET_STORAGE_DIR / f"{job_id}_gt_{file.filename}"
+    try:
+        with open(gt_temp_path, "wb") as f:
+            content = await file.read()
+            f.write(content)
+            
+        heatmap_filename = f"{job_id}_heatmap.jpg"
+        heatmap_path = ASSET_STORAGE_DIR / heatmap_filename
+        
+        metrics = ValidationEngine.calculate_metrics_and_heatmap(
+            str(predicted_dsm_path), 
+            str(gt_temp_path), 
+            str(heatmap_path)
+        )
+        
+        return JSONResponse(content={
+            "status": "success",
+            "rmse": metrics["rmse"],
+            "mae": metrics["mae"],
+            "heatmap_url": f"/assets/{heatmap_filename}"
+        })
+    except Exception as e:
+        logger.error(f"[API Gateway] Validation error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if gt_temp_path.exists():
+            gt_temp_path.unlink()
 
 # Mount Frontend Static Directory (Must be defined AFTER API routes to prevent fallback shadowing)
 FRONTEND_DIR = Path(__file__).parents[2] / "frontend"

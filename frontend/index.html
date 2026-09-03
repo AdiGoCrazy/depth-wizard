@@ -52,6 +52,12 @@
                     Rugged Terrain
                 </label>
             </div>
+            <button class="btn btn-primary" id="btn-validate-dsm" style="display: none; margin-right: 10px; background-color: var(--primary);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                VALIDATE DSM (GT)
+            </button>
+            <input type="file" id="file-validate" accept=".tif,.geotiff" style="display: none;">
+            
             <button class="btn btn-primary" id="btn-download-dsm" style="display: none; margin-right: 10px; background-color: var(--secondary);">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 DOWNLOAD DSM (.TIF)
@@ -77,6 +83,7 @@
             <div class="layer-buttons">
                 <button class="layer-btn active" data-layer="rgb" id="btn-layer-rgb">OPTICAL RGB</button>
                 <button class="layer-btn" data-layer="dsm" id="btn-layer-dsm">ELEVATION DSM</button>
+                <button class="layer-btn" data-layer="heatmap" id="btn-layer-heatmap" style="display: none; border-color: #ff4757; color: #ff4757;">ERROR HEATMAP</button>
             </div>
 
             <div class="panel-header" style="margin-top: 20px;">
@@ -112,6 +119,14 @@
                 <div class="data-row">
                     <span class="label">COORDINATES:</span>
                     <span class="value-mono" id="inspect-coords">X: -- | Y: --</span>
+                </div>
+                <div class="data-row" id="row-rmse" style="display: none; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                    <span class="label">VALIDATION RMSE:</span>
+                    <span class="value" style="color: #ff4757;" id="inspect-rmse">--</span>
+                </div>
+                <div class="data-row" id="row-mae" style="display: none;">
+                    <span class="label">VALIDATION MAE:</span>
+                    <span class="value" style="color: #ffa502;" id="inspect-mae">--</span>
                 </div>
             </div>
             <div class="inspector-footer">Hover/Click on 3D terrain to query metrics</div>
