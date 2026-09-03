@@ -16,11 +16,12 @@ class App {
         this.viewer = new TerrainViewer('webgl-canvas-container');
         this.inspector = new PointInspector(this.viewer);
 
-        // Wire Up Event Listeners
-        this.bindEvents();
-
+        // Initialize UI Elements
         this.dsmUrl = null; // Store active DSM for download
         this.downloadBtn = document.getElementById('btn-download-dsm');
+
+        // Wire Up Event Listeners
+        this.bindEvents();
 
         logger.log('APP_INIT_COMPLETE', 'MainApp', { status: 'Ready for satellite image processing.' });
     }
