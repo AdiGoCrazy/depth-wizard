@@ -19,6 +19,9 @@ class App {
         // Wire Up Event Listeners
         this.bindEvents();
 
+        this.dsmUrl = null; // Store active DSM for download
+        this.downloadBtn = document.getElementById('btn-download-dsm');
+
         logger.log('APP_INIT_COMPLETE', 'MainApp', { status: 'Ready for satellite image processing.' });
     }
 
@@ -63,6 +66,11 @@ class App {
                 logger.log('CAMERA_MODE_SWITCH', 'NavigationControls', { mode: 'FLYTHROUGH_WASD' });
             });
         }
+
+        // 4. Download DSM Event
+        if (this.downloadBtn) {
+            this.downloadBtn.addEventListener('click', () => this.handleDownload());
+        }
     }
 
     async handleFileUpload(event) {
@@ -80,6 +88,12 @@ class App {
             logger.log('UPLOAD_REJECTED', 'FileHandler', { reason: 'Exceeds 20MB hardware limit.' });
             alert("File size exceeds 20MB limit.");
             return;
+        }
+
+        // Hide download button during new upload
+        if (this.downloadBtn) {
+            this.downloadBtn.style.display = 'none';
+            this.dsmUrl = null;
         }
 
         const formData = new FormData();
@@ -132,11 +146,58 @@ class App {
             // Update 3D Terrain using the JPEG texture returned by the API
             this.viewer.updateTerrain(meshData, data.texture_url);
 
+            // Expose GeoTIFF Download
+            if (this.downloadBtn) {
+                this.dsmUrl = data.dsm_url;
+                this.downloadBtn.style.display = 'flex';
+            }
+
         } catch (error) {
             logger.error ? logger.error(error) : console.error(error);
             logger.log('API_POST_ERROR', 'HTTPClient', { message: error.message });
             alert(`Processing Error: ${error.message}`);
             if (statusIndicator) statusIndicator.textContent = "● ERROR";
+        }
+    }
+
+    async handleDownload() {
+        if (!this.dsmUrl) return;
+        
+        logger.log('GEOTIFF_EXPORT_INITIATED', 'FileHandler', { url: this.dsmUrl });
+        const originalText = this.downloadBtn.innerHTML;
+        this.downloadBtn.innerHTML = 'DOWNLOADING...';
+        this.downloadBtn.disabled = true;
+
+        try {
+            const response = await fetch(this.dsmUrl);
+            if (!response.ok) throw new Error("Failed to fetch GeoTIFF blob.");
+            
+            const blob = await response.blob();
+            logger.log('GEOTIFF_BLOB_GENERATED', 'FileHandler', { sizeMB: (blob.size / (1024*1024)).toFixed(2) });
+            
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = this.dsmUrl.split('/').pop() || 'dsm_export.tif';
+            document.body.appendChild(a);
+            
+            logger.log('GEOTIFF_EXPORT_SUCCESS', 'FileHandler', { action: 'Triggering local download prompt' });
+            a.click();
+            
+            // Memory Leak Prevention (Fault 4)
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 5000);
+            
+        } catch (error) {
+            logger.error ? logger.error(error) : console.error(error);
+            logger.log('GEOTIFF_EXPORT_FAILED', 'FileHandler', { error: error.message });
+            alert("GeoTIFF Download Failed: " + error.message);
+        } finally {
+            this.downloadBtn.innerHTML = originalText;
+            this.downloadBtn.disabled = false;
         }
     }
 }
