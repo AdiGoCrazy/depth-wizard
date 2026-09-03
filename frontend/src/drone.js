@@ -283,11 +283,16 @@ export class DroneController {
         // Update mesh transforms
         this.mesh.position.copy(this.position);
         
-        // Visual tilt based on velocity
+        // Visual tilt based on local directional velocity
+        const localVelocity = this.velocity.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), -this.euler.y);
+        
+        const pitch = Math.max(-Math.PI/4, Math.min(Math.PI/4, localVelocity.z * 0.02));
+        const roll = Math.max(-Math.PI/4, Math.min(Math.PI/4, -localVelocity.x * 0.02));
+        
         const tiltEuler = new THREE.Euler(
-            this.velocity.z * 0.05,
+            pitch,
             this.euler.y,
-            -this.velocity.x * 0.05,
+            roll,
             'YXZ'
         );
         this.mesh.quaternion.setFromEuler(tiltEuler);
