@@ -225,11 +225,16 @@ export class DroneController {
         this.velocity.x += moveDir.x * this.speed * dt;
         this.velocity.z += moveDir.z * this.speed * dt;
         
-        // Thrust & Gravity
+        // Thrust & Gravity (with Auto-Hover Altitude Hold)
         if (this.keys.Space) {
             this.velocity.y += this.thrust * dt;
         } else if (this.keys.ShiftLeft || this.keys.ShiftRight) {
             this.velocity.y -= this.thrust * dt;
+        } else {
+            // Auto-Hover: Apply exact counter-force to gravity to maintain altitude
+            this.velocity.y += Math.abs(this.gravity) * dt;
+            // Dampen residual vertical velocity quickly to stabilize hover
+            this.velocity.y *= 0.85; 
         }
         
         this.velocity.y += this.gravity * dt;
