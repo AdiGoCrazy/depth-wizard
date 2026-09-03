@@ -19,7 +19,7 @@ export class DroneController {
         // Physics Constants
         this.gravity = -20.0;
         this.thrust = 50.0;
-        this.speed = 40.0;
+        this.speed = 60.0; // Increased by 1.5x from 40.0
         this.drag = 0.92;
         
         // Input Polling State
@@ -73,6 +73,8 @@ export class DroneController {
         const front = new THREE.Mesh(frontGeo, frontMat);
         front.position.set(0, 0.25, -1.2);
         group.add(front);
+        
+        group.scale.set(0.25, 0.25, 0.25); // Scaled down by 4 times
 
         group.position.copy(this.position);
         group.visible = false;
@@ -262,7 +264,7 @@ export class DroneController {
 
         // Terrain Collision (Bilinear Lookup)
         const terrainY = this.getTerrainHeight(this.position.x, this.position.z);
-        const droneHeight = 1.0;
+        const droneHeight = 0.25; // Adjusted for 4x smaller scale
         
         if (this.position.y < terrainY + droneHeight) {
             this.position.y = terrainY + droneHeight;
