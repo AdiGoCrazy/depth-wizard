@@ -51,6 +51,7 @@ class App {
                 btnOrbit.classList.add('active');
                 btnFly.classList.remove('active');
                 if (flyHint) flyHint.style.display = 'none';
+                this.viewer.setCameraMode('orbit');
                 logger.log('CAMERA_MODE_SWITCH', 'NavigationControls', { mode: 'ORBIT' });
             });
 
@@ -58,6 +59,7 @@ class App {
                 btnFly.classList.add('active');
                 btnOrbit.classList.remove('active');
                 if (flyHint) flyHint.style.display = 'block';
+                this.viewer.setCameraMode('fly');
                 logger.log('CAMERA_MODE_SWITCH', 'NavigationControls', { mode: 'FLYTHROUGH_WASD' });
             });
         }

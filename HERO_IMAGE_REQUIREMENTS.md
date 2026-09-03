@@ -14,7 +14,7 @@ These requirements are specifically designed to avoid edge cases that confuse th
   * **Requirement:** The image crop must have absolutely **0% cloud cover** and minimal atmospheric haze/smog.
   * **Why:** The model interprets white, milky clouds or heavy haze as physical floating geometry. We must bypass this entirely by using perfectly clear imagery.
 * **True Nadir Perspective (Avoids Domain Shift Confusion):**
-  * **Requirement:** Imagery must be **orthorectified** (looking straight down).
+  * **Requirement:** Imagery must be **orthorectified, nadir images** (looking straight down).
   * **Why:** If the image is taken at an oblique angle where building facades (walls) are highly visible, the model's perspective engine gets confused and may slant the buildings. True nadir forces the model to rely purely on roof edges and shadows.
 * **High Geometric & Color Contrast (Avoids Flat Blending):**
   * **Requirement:** Select urban areas where rooftops are a distinctly different color or texture than the surrounding ground (e.g., white concrete/red tile roofs on dark asphalt).
@@ -56,3 +56,10 @@ When sourcing data, we should find exactly two datasets that fit the criteria ab
 ### Scene B: The Rugged Terrain Showcase
 * **Target:** A sharp mountainous region, deep canyon, or distinct geological formation without snow cover (e.g., the Grand Canyon, barren Himalayan valleys).
 * **Presentation Goal:** Demonstrates smooth, flowing topographical elevation mapping and how well the Three.js 3D flythrough handles massive terrain scale.
+
+### Scene C: The Indian Village Showcase (Rural/Semi-Urban)
+* **Target:** A densely packed rural Indian village (e.g., villages in Rajasthan or Gujarat with distinct, clustered houses separated by narrow lanes and interspersed with sparse vegetation).
+* **Visual Constraints:** 
+  * The roofs must heavily contrast with the unpaved roads/ground (e.g., bright terracotta tiles, white painted roofs, or dark slate against dusty brown terrain). 
+  * Avoid heavily forested villages where tree canopies completely obscure the houses, as the FastSAM segmentation will interpret the continuous forest canopy as a single massive undulating "building".
+* **Presentation Goal:** Demonstrates the model's ability to handle highly unstructured, organic, and dense settlements that do not conform to modern grid-like city planning, testing the FastSAM mask edge-flattening to its limits.

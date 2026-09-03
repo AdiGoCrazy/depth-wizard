@@ -24,6 +24,18 @@ SCENES = {
     "terrain_showcase_hero.tif": {
         "lat": 36.1000,  # Grand Canyon
         "lon": -112.1000,
+    },
+    "urban_chicago.tif": {
+        "lat": 41.8781,  # Downtown Chicago (The Loop)
+        "lon": -87.6298,
+    },
+    "terrain_spiti.tif": {
+        "lat": 32.2222,  # Spiti Valley (Rugged Terrain near Kaza)
+        "lon": 78.0673,
+    },
+    "village_jaisalmer.tif": {
+        "lat": 26.8722,  # Kuldhara Village, Jaisalmer (Dense rural/desert structures)
+        "lon": 70.7816,
     }
 }
 
