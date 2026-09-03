@@ -152,12 +152,22 @@ export class TerrainViewer {
         const targetMaxVisualHeight = 30.0; 
         const scalar = heightDiff > 0 ? (targetMaxVisualHeight / heightDiff) : 1.0;
 
-        // Displace Y coordinate (height)
+        // Displace Y coordinate (height) and set vertex colors
+        const colors = new Float32Array(vertices.length);
+        
         for (let i = 0; i < heights.length; i++) {
             // Vertex position array: [x0, y0, z0, x1, y1, z1, ...]
+            const relativeHeight = heightDiff > 0 ? (heights[i] - meshData.min_height) / heightDiff : 0;
+            
             vertices[i * 3 + 1] = (heights[i] - meshData.min_height) * scalar;
+            
+            // Map height to grayscale (0.0 to 1.0)
+            colors[i * 3] = relativeHeight;
+            colors[i * 3 + 1] = relativeHeight;
+            colors[i * 3 + 2] = relativeHeight;
         }
 
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
         geometry.computeVertexNormals();
 
         // Pass exact data to drone for O(1) Bilinear Interpolation collisions
@@ -176,7 +186,7 @@ export class TerrainViewer {
             });
 
             this.terrainMesh = new THREE.Mesh(geometry, material);
-            this.terrainMesh.userData = { meshData }; // Attach for raycasting
+            this.terrainMesh.userData = { meshData, originalTexture: texture }; // Attach for raycasting and texture restore
             this.scene.add(this.terrainMesh);
 
             logger.log('TERRAIN_UPDATE_COMPLETE', '3DViewer', { status: 'Rendered mesh + optical texture' });
@@ -190,11 +200,19 @@ export class TerrainViewer {
 
         if (mode === 'rgb') {
             this.terrainMesh.material.wireframe = false;
+            this.terrainMesh.material.vertexColors = false;
+            if (this.terrainMesh.userData.originalTexture) {
+                this.terrainMesh.material.map = this.terrainMesh.userData.originalTexture;
+            }
+            this.terrainMesh.material.color.setHex(0xffffff);
+            this.terrainMesh.material.needsUpdate = true;
         } else if (mode === 'dsm') {
-            // Mock Elevation Colormap via wireframe
-            this.terrainMesh.material.wireframe = true;
-        } else if (mode === 'slope') {
+            // Grayscale heightmap via vertex colors
             this.terrainMesh.material.wireframe = false;
+            this.terrainMesh.material.vertexColors = true;
+            this.terrainMesh.material.map = null;
+            this.terrainMesh.material.color.setHex(0xffffff);
+            this.terrainMesh.material.needsUpdate = true;
         }
     }
 
