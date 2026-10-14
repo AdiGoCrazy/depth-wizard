@@ -1,6 +1,6 @@
 # DepthWizard 🛰️
 
-> **ISRO Hackathon 2025 — Problem Statement #26175**  
+> **SIH Hackathon 2026 — Problem Statement #26175**  
 > Theme: Disaster Management | Organisation: Space Applications Centre (SAC), ISRO
 
 **DepthWizard** is a single-view height estimation and interactive 3D flythrough system that transforms ordinary satellite/aerial RGB imagery into metric-scale Digital Surface Models (DSMs) and immersive WebGL terrain flythroughs — no stereo pairs, no LiDAR required.
@@ -288,7 +288,7 @@ depth-wizard/
 
 ## 📄 Licence
 
-This project was developed as an ISRO Hackathon submission and is released for academic and research purposes.
+This project was developed as an SIH 2026 Hackathon submission and is released for academic and research purposes.
 
 ---
 
