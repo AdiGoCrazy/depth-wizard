@@ -1,0 +1,47 @@
+flowchart LR
+    classDef primary fill:#1e293b,stroke:#00f0ff,stroke-width:2px,color:#fff,text-align:center;
+    classDef secondary fill:#0f172a,stroke:#3b82f6,stroke-width:1px,color:#cbd5e1,text-align:center;
+    classDef terminal fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff,text-align:center;
+    classDef error fill:#7f1d1d,stroke:#ef4444,stroke-width:2px,color:#fff,text-align:center;
+
+    subgraph Phase1 [Data Ingestion & Inference]
+        direction TB
+        A([Input Satellite Image<br/>RGB / GeoTIFF]):::primary
+        B[Image Preprocessing<br/>CLAHE Enhancement]:::secondary
+        C[Depth Anything V2<br/>Monocular Depth Inference]:::primary
+        D[FastSAM Segmentation<br/>Edge Flattening]:::secondary
+        A --> B --> C --> D
+    end
+
+    subgraph Phase2 [Calibration Pipeline]
+        direction TB
+        E{Has Geospatial<br/>Metadata?}:::secondary
+        F[Fetch SRTM 30m Anchor]:::secondary
+        G[Metric Regression Calibration]:::primary
+        H[Scale to Relative 8-bit]:::secondary
+        I([High-Res Digital<br/>Surface Model]):::terminal
+        
+        E -->|Yes| F --> G --> I
+        E -->|No| H --> I
+    end
+
+    subgraph Phase3 [Output & Validation]
+        direction TB
+        J[Interactive 3D WebGL Viewer]:::secondary
+        K[Export Industry-Standard<br/>GeoTIFF]:::terminal
+        L([Upload Ground Truth<br/>LiDAR DEM]):::primary
+        M[Automated Validation Engine]:::primary
+        N[Reproject & Align Arrays]:::secondary
+        O([Calculate RMSE / MAE]):::terminal
+        P([Generate Error Heatmap]):::error
+
+        J
+        K -.-> L --> M --> N
+        N --> O
+        N --> P
+    end
+
+    %% Cross-subgraph connections
+    D --> E
+    I --> J
+    I --> K

@@ -13,7 +13,21 @@ dist/
 build/
 .env
 
-# Large binaries and assets
+# Large binaries and model weights
 models/
 demo_assets/
 *.pt
+
+# Documentation/export archives
+*.zip
+GAMUS_FineTuning_Archive/
+
+# Temporary/scratch files
+DEVELOP_SKILL_DRAFT.md
+HERO_IMAGE_REQUIREMENTS.md
+fetch_hero_images.py
+generate_speed_graph.py
+generate_synthetic_gt.py
+
+# Export artifacts
+/tmp/depthwizard_exports/
